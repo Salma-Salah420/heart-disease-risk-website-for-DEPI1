@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -70,19 +71,19 @@ export default function HeartDiseaseRiskDetection() {
           <p className="text-gray-600 text-lg">Get your personalized heart disease risk evaluation</p>
         </div>
         
-        <div className="flex flex-col items-start gap-4"> 
-  <div className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
-    <Image
-      src="https://onu65v95kt.ufs.sh/f/4R8xh8GuA59KnnIxsSe14lX0zg5wK6VveCtZGcINJQkbBOT2"
-      alt="MagicHeal Health Dashboard"
-      width={500}
-      height={300} 
-      className="w-full h-auto object-cover"
-      priority
-    />
-  </div>
-    </div>
-  
+        {/* الصورة */}
+        <div className="flex justify-center mb-8">
+          <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
+            <Image
+              src="https://onu65v95kt.ufs.sh/f/4R8xh8GuA59KnnIxsSe14lX0zg5wK6VveCtZGcINJQkbBOT2"
+              alt="MagicHeal Health Dashboard"
+              width={800}
+              height={400}
+              className="w-full h-auto object-cover"
+              priority
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Form Card */}
