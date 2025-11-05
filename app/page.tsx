@@ -1,13 +1,15 @@
 "use client"
 
+import type React from "react"
+import Image from "next/image"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, Heart } from "lucide-react"
 
 export default function HeartDiseaseRiskDetection() {
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ prediction?: number; probability?: number; error?: string } | null>(null)
+  const [result, setResult] = useState<{ result: string; risk: "low" | "high" } | null>(null)
   const [formData, setFormData] = useState({
     bmi: "",
     smoker: "",
@@ -38,39 +40,18 @@ export default function HeartDiseaseRiskDetection() {
     setLoading(true)
     setResult(null)
 
-    // تحويل القيم حسب ما يتوقع الـ API
-    const apiData = {
-      "Unnamed: 0": 0,
-      "bmi": Number(formData.bmi),
-      "smoker": formData.smoker === "yes" ? 1 : 0,
-      "alcoholDrinker": formData.alcoholDrinker === "yes" ? 1 : 0,
-      "stroke": formData.stroke === "yes" ? 1 : 0,
-      "physicalHealth": Number(formData.physicalHealth),
-      "mentalHealth": Number(formData.mentalHealth),
-      "difficultyWalking": formData.difficultyWalking === "yes" ? 1 : 0,
-      "sex": formData.sex === "male" ? 1 : 0,
-      "ageCategory": Number(formData.ageCategory),
-      "race": Number(formData.race),
-      "diabetic": formData.diabetic === "yes" ? 1 : 0,
-      "physicalActivity": formData.physicalActivity === "yes" ? 1 : 0,
-      "generalHealth": Number(formData.generalHealth),
-      "sleepTime": Number(formData.sleepTime),
-      "asthma": formData.asthma === "yes" ? 1 : 0,
-      "kidneyDisease": formData.kidneyDisease === "yes" ? 1 : 0,
-      "skinCancer": formData.skinCancer === "yes" ? 1 : 0,
-    }
-
     try {
-      const response = await fetch("https://mlflow-model-serving-production.up.railway.app/predict", {
+      const response = await fetch("/api/heart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(apiData),
+        body: JSON.stringify(formData),
       })
+
       const data = await response.json()
       setResult(data)
     } catch (error) {
-      console.error(error)
-      setResult({ error: "An error occurred. Please try again." })
+      console.error("Error:", error)
+      setResult({ result: "An error occurred. Please try again.", risk: "high" })
     } finally {
       setLoading(false)
     }
@@ -80,93 +61,365 @@ export default function HeartDiseaseRiskDetection() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
             <Heart className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Heart Disease Risk Assessment</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Heart Disease Risk Assessment</h1>
           </div>
-          <p className="text-gray-600">Enter your health details for a personalized risk prediction.</p>
+          <p className="text-gray-600 text-lg">Get your personalized heart disease risk evaluation</p>
+        </div>
+        
+        {/* الصورة */}
+        <div className="flex justify-center mb-8">
+          <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
+            <Image
+              src="https://onu65v95kt.ufs.sh/f/4R8xh8GuA59KnnIxsSe14lX0zg5wK6VveCtZGcINJQkbBOT2"
+              alt="MagicHeal Health Dashboard"
+              width={800}
+              height={400}
+              className="w-full h-auto object-cover"
+              priority
+            />
+          </div>
         </div>
 
-        {/* Form Card */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg pb-6">
-            <CardTitle className="text-2xl mb-1">Patient Information Form</CardTitle>
-            <CardDescription className="text-blue-100 text-base">
-              Fill all fields accurately for the best prediction.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Example: BMI */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">BMI</label>
-                <input
-                  type="number"
-                  name="bmi"
-                  value={formData.bmi}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Form Card */}
+          <div className="lg:col-span-3">
+            <Card className="shadow-lg border-0">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg pb-6">
+                <CardTitle className="text-2xl mb-2">Patient Information Form</CardTitle>
+                <CardDescription className="text-blue-100 text-base leading-relaxed">
+                  Please provide your complete health information below for an accurate risk assessment.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Row 1: BMI and Smoking */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">BMI</label>
+                      <input
+                        type="number"
+                        name="bmi"
+                        value={formData.bmi}
+                        onChange={handleInputChange}
+                        placeholder="e.g., 25.5"
+                        step="0.1"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Smoker</label>
+                      <select
+                        name="smoker"
+                        value={formData.smoker}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </div>
 
-              {/* Add all other 16 fields similarly, e.g., smoker, alcoholDrinker, etc. */}
-              {/* Example for select fields */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Smoker</label>
-                <select
-                  name="smoker"
-                  value={formData.smoker}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select...</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
+                  {/* Row 2: Alcohol and Stroke */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Alcohol Drinker</label>
+                      <select
+                        name="alcoholDrinker"
+                        value={formData.alcoholDrinker}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">History of Stroke</label>
+                      <select
+                        name="stroke"
+                        value={formData.stroke}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </div>
 
-             
-              <Button
-                type="submit"
-                disabled={!isFormValid || loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 rounded-lg mt-4"
-              >
-                {loading ? "Analyzing..." : "Get Risk Assessment"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                  {/* Row 3: Health Ratings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Physical Health (1-10 days)
+                      </label>
+                      <input
+                        type="number"
+                        name="physicalHealth"
+                        value={formData.physicalHealth}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="10"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Mental Health (1-10 days)</label>
+                      <input
+                        type="number"
+                        name="mentalHealth"
+                        value={formData.mentalHealth}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="10"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Mobility and Demographics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Difficulty Walking/Climbing
+                      </label>
+                      <select
+                        name="difficultyWalking"
+                        value={formData.difficultyWalking}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Sex</label>
+                      <select
+                        name="sex"
+                        value={formData.sex}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 5: Age and Race */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Age Category</label>
+                      <select
+                        name="ageCategory"
+                        value={formData.ageCategory}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="18-24">18-24</option>
+                        <option value="25-34">25-34</option>
+                        <option value="35-44">35-44</option>
+                        <option value="45-54">45-54</option>
+                        <option value="55-64">55-64</option>
+                        <option value="65+">65+</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Race</label>
+                      <select
+                        name="race"
+                        value={formData.race}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="white">White</option>
+                        <option value="black">Black</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 6: Diabetes and Physical Activity */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Diabetic</label>
+                      <select
+                        name="diabetic"
+                        value={formData.diabetic}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Physical Activity</label>
+                      <select
+                        name="physicalActivity"
+                        value={formData.physicalActivity}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row 7: General Health and Sleep */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">General Health</label>
+                      <select
+                        name="generalHealth"
+                        value={formData.generalHealth}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="very-good">Very Good</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Sleep Time (hours)</label>
+                      <input
+                        type="number"
+                        name="sleepTime"
+                        value={formData.sleepTime}
+                        onChange={handleInputChange}
+                        min="0"
+                        max="24"
+                        step="0.5"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Row 8: Conditions */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Asthma</label>
+                      <select
+                        name="asthma"
+                        value={formData.asthma}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Kidney Disease</label>
+                      <select
+                        name="kidneyDisease"
+                        value={formData.kidneyDisease}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Skin Cancer</label>
+                      <select
+                        name="skinCancer"
+                        value={formData.skinCancer}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4">
+                    <Button
+                      type="submit"
+                      disabled={!isFormValid || loading}
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg transition-all duration-200"
+                    >
+                      {loading ? "Analyzing..." : "Get Risk Assessment"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Result Card */}
         {result && (
           <Card
-            className={`shadow-lg border-0 mt-6 ${
-              result.prediction === 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-            }`}
+            className={shadow-lg border-0 mt-8 ${result.risk === "low" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}}
           >
-            <CardContent className="pt-4 flex items-start gap-3">
-              {result.prediction === 0 ? (
-                <CheckCircle2 className="w-8 h-8 text-green-600 mt-1" />
-              ) : (
-                <AlertCircle className="w-8 h-8 text-red-600 mt-1" />
-              )}
-              <div>
-                <h3 className={`text-xl font-bold ${result.prediction === 0 ? "text-green-900" : "text-red-900"}`}>
-                  {result.prediction === 0 ? "Low Risk" : "High Risk"}
-                </h3>
-                <p className="text-gray-700">
-                  {result.probability ? `Probability: ${result.probability}` : result.error}
-                </p>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                {result.risk === "low" ? (
+                  <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+                ) : (
+                  <AlertCircle className="w-8 h-8 text-red-600 flex-shrink-0 mt-1" />
+                )}
+                <div>
+                  <h3 className={text-xl font-bold ${result.risk === "low" ? "text-green-900" : "text-red-900"}}>
+                    {result.risk === "low" ? "Low Risk" : "High Risk"}
+                  </h3>
+                  <p className={mt-2 text-base ${result.risk === "low" ? "text-green-800" : "text-red-800"}}>
+                    {result.result}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Footer */}
+        <div className="mt-12 text-center text-gray-600 text-sm">
+          <p>This assessment is for informational purposes only and should not replace professional medical advice.</p>
+        </div>
       </div>
     </main>
   )
